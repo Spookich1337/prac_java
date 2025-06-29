@@ -69,7 +69,9 @@ public class Kruskal {
     private ArrayList<GraphPanel.Edge> edges;
     private ArrayList<State> states;
 
-    public Kruskal(ArrayList<GraphPanel.Edge> edges) {
+    public Kruskal(ArrayList<GraphPanel.Edge> edges, int numVertices) {
+        this.numVertices = numVertices;
+        this.states = new ArrayList<>();
         this.edges.addAll(edges);
     }
 
