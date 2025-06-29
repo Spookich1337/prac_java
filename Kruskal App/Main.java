@@ -1,5 +1,4 @@
 import javax.swing.SwingUtilities;
-
 import src.logic.GraphApp;
 
 public class Main {

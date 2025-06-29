@@ -1,9 +1,9 @@
 package src.logic;
 
-import src.gui.GraphPanel;
-import javax.swing.*;
 import java.awt.*;
 import java.io.*;
+import javax.swing.*;
+import src.gui.GraphPanel;
 
 public class GraphApp extends JFrame {
     private GraphPanel graphPanel;
@@ -73,7 +73,7 @@ public class GraphApp extends JFrame {
     }
 
     private void runAlgorithm() {
-        graphPanel.runDummyAlgorithm(); // Заменить на реальный алгоритм
+        graphPanel.runAlgorithm(); // Заменить на реальный алгоритм
     }
 
     private void stepBack() {

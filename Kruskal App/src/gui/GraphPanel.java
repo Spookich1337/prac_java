@@ -1,19 +1,20 @@
 package src.gui;
 
-import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 import java.util.*;
+import javax.swing.*;
+import src.logic.Kruskal;
 
 public class GraphPanel extends JPanel {
     private Vertex draggedVertex = null;
     private Point offset = new Point();
 
-    static class Vertex {
-        int x, y, radius = 10;
-        String label;
-        Vertex(int x, int y, String label) {
+    public static class Vertex {
+        public int x, y, radius = 10;
+        public int label;
+        Vertex(int x, int y, int label) {
             this.x = x;
             this.y = y;
             this.label = label;
@@ -23,27 +24,38 @@ public class GraphPanel extends JPanel {
         }
     }
 
-    static class Edge {
-        Vertex v1, v2;
-        int weight;
+    public static class Edge implements Comparable<Edge> {
+        public Vertex v1, v2;
+        public int weight;
+
         Edge(Vertex v1, Vertex v2, int weight) {
             this.v1 = v1;
             this.v2 = v2;
             this.weight = weight;
         }
+
         boolean connects(Vertex v) {
             return v1 == v || v2 == v;
         }
+
+        @Override
+        public int compareTo(Edge other) {
+            return Integer.compare(this.weight, other.weight);
+        }
     }
 
-    private java.util.List<Vertex> vertices = new ArrayList<>();
-    private java.util.List<Edge> edges = new ArrayList<>();
+    private java.util.ArrayList<Vertex> vertices = new ArrayList<>();
+    private java.util.ArrayList<Edge> edges = new ArrayList<>();
     private Vertex selectedVertex = null;
     private int vertexCounter = 0;
     private JTextArea logArea;
 
     private java.util.List<String> algorithmSteps = new ArrayList<>();
     private int currentStep = -1;
+
+    private TreeSet<Integer> freeLabels = new TreeSet<>();
+    private int labelCounter = 1;
+
 
     public GraphPanel(JTextArea logArea) {
         this.logArea = logArea;
@@ -56,7 +68,7 @@ public class GraphPanel extends JPanel {
 
                 if (SwingUtilities.isLeftMouseButton(e)) {
                     if (clicked == null) {
-                        String label = getNextLabel();
+                        int label = getNextLabel();
                         vertices.add(new Vertex(e.getX(), e.getY(), label));
                     } else {
                         if (selectedVertex == null) {
@@ -83,6 +95,7 @@ public class GraphPanel extends JPanel {
                     if (clicked != null) {
                         edges.removeIf(edge -> edge.connects(clicked));
                         vertices.remove(clicked);
+                        freeLabels.add(clicked.label); // освободить метку
                         selectedVertex = null;
                     }
                 }
@@ -111,15 +124,12 @@ public class GraphPanel extends JPanel {
         return null;
     }
 
-    private String getNextLabel() {
-        String label = "";
-        int n = vertexCounter++;
-        do {
-            label = (char) ('A' + (n % 26)) + label;
-            n = n / 26 - 1;
-        } while (n >= 0);
-        return label;
+    private int getNextLabel() {
+    if (!freeLabels.isEmpty()) {
+        return freeLabels.pollFirst();  // берём наименьший доступный номер
     }
+    return labelCounter++;
+}
 
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -135,14 +145,27 @@ public class GraphPanel extends JPanel {
             g.fillOval(v.x - v.radius, v.y - v.radius, v.radius * 2, v.radius * 2);
             g.setColor(Color.BLACK);
             g.drawOval(v.x - v.radius, v.y - v.radius, v.radius * 2, v.radius * 2);
-            g.drawString(v.label, v.x - 7, v.y + 5);
+            g.drawString(Integer.toString(v.label), v.x - 7, v.y + 5);
         }
     }
 
-    public void runDummyAlgorithm() {
+    public void runAlgorithm() {
         algorithmSteps.clear();
         currentStep = -1;
-        
+
+        Kruskal kruskal = new Kruskal(edges, vertices.size());
+        ArrayList<Edge> mst = kruskal.computeMST();
+        int totalWeight = 0;
+
+        String result_string = "Алгоритм Краскала:\n";
+        for (Edge edge : mst) {
+            totalWeight += edge.weight;
+            result_string += String.format("Добавлено ребро %s-%s с весом %d\n", edge.v1, edge.v2, edge.weight);
+        }
+
+        result_string += String.format("Общий вес остовного дерева: %d", totalWeight);
+        algorithmSteps.add(result_string);
+
         step(1);
     }
 
@@ -156,6 +179,10 @@ public class GraphPanel extends JPanel {
     }
 
     public void generateRandomGraph(int n) {
+        vertexCounter = 0;
+        labelCounter = 1;
+        freeLabels.clear();
+
         vertices.clear();
         edges.clear();
         vertexCounter = 0;
@@ -173,6 +200,10 @@ public class GraphPanel extends JPanel {
     }
 
     public void loadFromFile(File file) {
+        vertexCounter = 0;
+        labelCounter = 1;
+        freeLabels.clear();
+
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             vertices.clear();
             edges.clear();
