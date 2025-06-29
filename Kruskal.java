@@ -1,29 +1,6 @@
 import java.util.*;
 
 /**
- * Represents an undirected edge with a weight.
- */
-class AlgEdge implements Comparable<AlgEdge> {
-    int u, v, weight;
-
-    public AlgEdge(int u, int v, int weight) {
-        this.u = u;
-        this.v = v;
-        this.weight = weight;
-    }
-
-    @Override
-    public int compareTo(AlgEdge other) {
-        return Integer.compare(this.weight, other.weight);
-    }
-
-    @Override
-    public String toString() {
-        return String.format("(%d--%d, w=%d)", u, v, weight);
-    }
-}
-
-/**
  * Union-Find (Disjoint Set) data structure for cycle detection.
  */
 class UnionFind {
@@ -62,8 +39,8 @@ class UnionFind {
 /**
  * Stores a snapshot of the algorithm at each step.
  */
-record State(List<AlgEdge> includedEdges, int totalWeight, AlgEdge currentEdge, boolean isIncluded) {
-    State(List<AlgEdge> includedEdges, int totalWeight, AlgEdge currentEdge, boolean isIncluded) {
+record State(ArrayList<GraphPanel.Edge> includedEdges, int totalWeight, GraphPanel.Edge currentEdge, boolean isIncluded) {
+    State(ArrayList<GraphPanel.Edge> includedEdges, int totalWeight, GraphPanel.Edge currentEdge, boolean isIncluded) {
         // Deep copy the list to freeze the state
         this.includedEdges = new ArrayList<>(includedEdges);
         this.totalWeight = totalWeight;
@@ -72,8 +49,8 @@ record State(List<AlgEdge> includedEdges, int totalWeight, AlgEdge currentEdge, 
     }
 
     @Override
-    public List<AlgEdge> includedEdges() {
-        return Collections.unmodifiableList(includedEdges);
+    public ArrayList<GraphPanel.Edge> includedEdges() {
+        return includedEdges;
     }
 
     @Override
@@ -89,8 +66,12 @@ record State(List<AlgEdge> includedEdges, int totalWeight, AlgEdge currentEdge, 
  */
 public class Kruskal {
     private int numVertices;
-    private List<AlgEdge> edges;
-    private List<State> states;
+    private ArrayList<GraphPanel.Edge> edges;
+    private ArrayList<State> states;
+
+    public Kruskal(ArrayList<GraphPanel.Edge> edges) {
+        this.edges.addAll(edges);
+    }
 
     public Kruskal(int numVertices) {
         this.numVertices = numVertices;
@@ -98,24 +79,24 @@ public class Kruskal {
         this.states = new ArrayList<>();
     }
 
-    public void addEdge(int u, int v, int weight) {
-        edges.add(new AlgEdge(u, v, weight));
+    public void addEdge(GraphPanel.Edge edge) {
+        edges.add(edge);
     }
 
     /**
      * Executes Kruskal's algorithm and records states.
      */
-    public List<AlgEdge> computeMST() {
+    public ArrayList<GraphPanel.Edge> computeMST() {
         // Sort edges by weight
         Collections.sort(edges);
         UnionFind uf = new UnionFind(numVertices);
-        List<AlgEdge> mst = new ArrayList<>();
+        ArrayList<GraphPanel.Edge> mst = new ArrayList<>();
         int totalWeight = 0;
 
-        for (AlgEdge edge : edges) {
+        for (GraphPanel.Edge edge : edges) {
             boolean added = false;
             // If adding this edge doesn't form a cycle
-            if (uf.union(edge.u, edge.v)) {
+            if (uf.union(edge.v1.label.toCharArray()[0], edge.v2.label.toCharArray()[0])) {
                 mst.add(edge);
                 totalWeight += edge.weight;
                 added = true;
@@ -129,25 +110,7 @@ public class Kruskal {
     /**
      * Returns all recorded states.
      */
-    public List<State> getStates() {
-        return Collections.unmodifiableList(states);
-    }
-    public static void main(String[] args) {
-        Kruskal algo = new Kruskal(6);
-        algo.addEdge(0, 1, 4);
-        algo.addEdge(0, 2, 4);
-        algo.addEdge(1, 2, 2);
-        algo.addEdge(1, 3, 5);
-        algo.addEdge(2, 3, 5);
-        algo.addEdge(2, 4, 3);
-        algo.addEdge(3, 4, 1);
-        algo.addEdge(3, 5, 6);
-        algo.addEdge(4, 5, 7);
-
-        algo.computeMST();
-        for (State s : algo.getStates()) {
-            System.out.println(s);
-        }
+    public ArrayList<State> getStates() {
+        return states;
     }
 }
-
