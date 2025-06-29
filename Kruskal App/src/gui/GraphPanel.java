@@ -1,0 +1,216 @@
+package src.gui;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.io.*;
+import java.util.*;
+
+public class GraphPanel extends JPanel {
+    private Vertex draggedVertex = null;
+    private Point offset = new Point();
+
+    static class Vertex {
+        int x, y, radius = 10;
+        String label;
+        Vertex(int x, int y, String label) {
+            this.x = x;
+            this.y = y;
+            this.label = label;
+        }
+        boolean contains(int mx, int my) {
+            return (mx - x)*(mx - x) + (my - y)*(my - y) <= radius * radius;
+        }
+    }
+
+    static class Edge {
+        Vertex v1, v2;
+        int weight;
+        Edge(Vertex v1, Vertex v2, int weight) {
+            this.v1 = v1;
+            this.v2 = v2;
+            this.weight = weight;
+        }
+        boolean connects(Vertex v) {
+            return v1 == v || v2 == v;
+        }
+    }
+
+    private java.util.List<Vertex> vertices = new ArrayList<>();
+    private java.util.List<Edge> edges = new ArrayList<>();
+    private Vertex selectedVertex = null;
+    private int vertexCounter = 0;
+    private JTextArea logArea;
+
+    private java.util.List<String> algorithmSteps = new ArrayList<>();
+    private int currentStep = -1;
+
+    public GraphPanel(JTextArea logArea) {
+        this.logArea = logArea;
+        setBackground(Color.WHITE);
+        setPreferredSize(new Dimension(800, 600));
+
+        addMouseListener(new MouseAdapter() {
+            public void mousePressed(MouseEvent e) {
+                Vertex clicked = getVertexAt(e.getX(), e.getY());
+
+                if (SwingUtilities.isLeftMouseButton(e)) {
+                    if (clicked == null) {
+                        String label = getNextLabel();
+                        vertices.add(new Vertex(e.getX(), e.getY(), label));
+                    } else {
+                        if (selectedVertex == null) {
+                            selectedVertex = clicked;
+                        } else {
+                            if (selectedVertex != clicked) {
+                                String input = JOptionPane.showInputDialog("Введите вес ребра:");
+                                try {
+                                    int weight = Integer.parseInt(input);
+                                    edges.add(new Edge(selectedVertex, clicked, weight));
+                                } catch (NumberFormatException ex) {
+                                    JOptionPane.showMessageDialog(null, "Некорректный ввод веса");
+                                }
+                            }
+                            selectedVertex = null;
+                        }
+                        draggedVertex = clicked;
+                        if (draggedVertex != null) {
+                            offset.x = e.getX() - draggedVertex.x;
+                            offset.y = e.getY() - draggedVertex.y;
+                        }
+                    }
+                } else if (SwingUtilities.isRightMouseButton(e)) {
+                    if (clicked != null) {
+                        edges.removeIf(edge -> edge.connects(clicked));
+                        vertices.remove(clicked);
+                        selectedVertex = null;
+                    }
+                }
+                repaint();
+            }
+            public void mouseReleased(MouseEvent e) {
+                draggedVertex = null;
+            }
+        });
+
+        addMouseMotionListener(new MouseMotionAdapter() {
+            public void mouseDragged(MouseEvent e) {
+                if (draggedVertex != null) {
+                    draggedVertex.x = e.getX() - offset.x;
+                    draggedVertex.y = e.getY() - offset.y;
+                    repaint();
+                }
+            }
+        });
+    }
+
+    private Vertex getVertexAt(int x, int y) {
+        for (Vertex v : vertices) {
+            if (v.contains(x, y)) return v;
+        }
+        return null;
+    }
+
+    private String getNextLabel() {
+        String label = "";
+        int n = vertexCounter++;
+        do {
+            label = (char) ('A' + (n % 26)) + label;
+            n = n / 26 - 1;
+        } while (n >= 0);
+        return label;
+    }
+
+    public void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        for (Edge edge : edges) {
+            g.setColor(Color.BLACK);
+            g.drawLine(edge.v1.x, edge.v1.y, edge.v2.x, edge.v2.y);
+            int midX = (edge.v1.x + edge.v2.x) / 2;
+            int midY = (edge.v1.y + edge.v2.y) / 2;
+            g.drawString(Integer.toString(edge.weight), midX, midY);
+        }
+        for (Vertex v : vertices) {
+            g.setColor(Color.CYAN);
+            g.fillOval(v.x - v.radius, v.y - v.radius, v.radius * 2, v.radius * 2);
+            g.setColor(Color.BLACK);
+            g.drawOval(v.x - v.radius, v.y - v.radius, v.radius * 2, v.radius * 2);
+            g.drawString(v.label, v.x - 7, v.y + 5);
+        }
+    }
+
+    public void runDummyAlgorithm() {
+        algorithmSteps.clear();
+        currentStep = -1;
+        
+        step(1);
+    }
+
+    public void step(int delta) {
+        currentStep += delta;
+        if (currentStep < 0) currentStep = 0;
+        if (currentStep >= algorithmSteps.size()) currentStep = algorithmSteps.size() - 1;
+        if (!algorithmSteps.isEmpty()) {
+            logArea.setText(algorithmSteps.get(currentStep));
+        }
+    }
+
+    public void generateRandomGraph(int n) {
+        vertices.clear();
+        edges.clear();
+        vertexCounter = 0;
+        Random rand = new Random();
+        for (int i = 0; i < n; i++) {
+            int x = 100 + rand.nextInt(600);
+            int y = 100 + rand.nextInt(400);
+            vertices.add(new Vertex(x, y, getNextLabel()));
+        }
+        for (int i = 0; i < n - 1; i++) {
+            int weight = 1 + rand.nextInt(20);
+            edges.add(new Edge(vertices.get(i), vertices.get(i + 1), weight));
+        }
+        repaint();
+    }
+
+    public void loadFromFile(File file) {
+        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+            vertices.clear();
+            edges.clear();
+            vertexCounter = 0;
+            ArrayList<String[]> lines = new ArrayList<>();
+            String line;
+            while ((line = br.readLine()) != null) {
+                lines.add(line.trim().split("\\s+"));
+            }
+            int n = lines.size();
+
+            // Расставляем вершины по окружности
+            int centerX = getWidth() / 2;
+            int centerY = getHeight() / 2;
+            int radius = Math.min(getWidth(), getHeight()) / 3;
+            for (int i = 0; i < n; i++) {
+                double angle = 2 * Math.PI * i / n;
+                int x = centerX + (int)(radius * Math.cos(angle));
+                int y = centerY + (int)(radius * Math.sin(angle));
+                vertices.add(new Vertex(x, y, getNextLabel()));
+            }
+
+            for (int i = 0; i < n; i++) {
+                for (int j = i + 1; j < n; j++) {
+                    String val = lines.get(i)[j];
+                    if (!val.equals("0")) {
+                        try {
+                            int weight = Integer.parseInt(val);
+                            edges.add(new Edge(vertices.get(i), vertices.get(j), weight));
+                        } catch (NumberFormatException e) {
+                            JOptionPane.showMessageDialog(this, "Неверный формат веса: " + val);
+                        }
+                    }
+                }
+            }
+            repaint();
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "Ошибка чтения файла");
+        }
+    }
+}

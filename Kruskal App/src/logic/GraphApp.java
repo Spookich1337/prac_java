@@ -1,0 +1,86 @@
+package src.logic;
+
+import src.gui.GraphPanel;
+import javax.swing.*;
+import java.awt.*;
+import java.io.*;
+
+public class GraphApp extends JFrame {
+    private GraphPanel graphPanel;
+    private JTextArea logArea;
+    private JButton stepBackButton, stepForwardButton;
+
+    public GraphApp() {
+        setTitle("Алгоритм Краскала");
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setSize(1000, 700);
+        setResizable(false);
+        setLayout(new BorderLayout());
+
+        // Верхняя панель с кнопками
+        JPanel topPanel = new JPanel();
+        JButton startButton = new JButton("Старт Алгоритма");
+        JButton loadButton = new JButton("Загрузка");
+
+        startButton.addActionListener(e -> runAlgorithm());
+        loadButton.addActionListener(e -> showLoadOptions());
+
+        topPanel.add(startButton);
+        topPanel.add(loadButton);
+
+        // Панель управления шагами
+        JPanel bottomPanel = new JPanel();
+        stepBackButton = new JButton("<-");
+        stepForwardButton = new JButton("->");
+        stepBackButton.addActionListener(e -> stepBack());
+        stepForwardButton.addActionListener(e -> stepForward());
+
+        bottomPanel.add(stepBackButton);
+        bottomPanel.add(stepForwardButton);
+
+        // Правое текстовое поле
+        logArea = new JTextArea();
+        logArea.setEditable(false);
+        JScrollPane logScroll = new JScrollPane(logArea);
+        logScroll.setPreferredSize(new Dimension(200, getHeight()));
+
+        // Основной холст графа
+        graphPanel = new GraphPanel(logArea);
+
+        add(topPanel, BorderLayout.NORTH);
+        add(bottomPanel, BorderLayout.SOUTH);
+        add(logScroll, BorderLayout.EAST);
+        add(graphPanel, BorderLayout.CENTER);
+
+        setLocationRelativeTo(null);
+        setVisible(true);
+    }
+
+    private void showLoadOptions() {
+        String[] options = {"Из файла", "Случайная матрица"};
+        int choice = JOptionPane.showOptionDialog(this, "Загрузить граф:", "Загрузка",
+                JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, options, options[0]);
+
+        if (choice == 0) {
+            JFileChooser fileChooser = new JFileChooser();
+            if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+                File file = fileChooser.getSelectedFile();
+                graphPanel.loadFromFile(file);
+            }
+        } else if (choice == 1) {
+            graphPanel.generateRandomGraph(5); // генерируем 5 вершин, можно поменять
+        }
+    }
+
+    private void runAlgorithm() {
+        graphPanel.runDummyAlgorithm(); // Заменить на реальный алгоритм
+    }
+
+    private void stepBack() {
+        graphPanel.step(-1);
+    }
+
+    private void stepForward() {
+        graphPanel.step(1);
+    }
+}
