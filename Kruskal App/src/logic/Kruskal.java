@@ -3,76 +3,112 @@ package src.logic;
 import java.util.*;
 import src.gui.GraphPanel;
 
-class UnionFind {
-    private int[] parent;
-    private int[] rank;
+// Класс для поиска пути и детекции цикла
+class CycleDetector {
+    /**
+     * Ищет простой путь между start и target.
+     * Возвращает список ребер пути или пустой список если пути нет.
+     */
+    public static List<GraphPanel.Edge> findPath(
+            Collection<GraphPanel.Edge> edges,
+            int start,
+            int target
+    ) {
+        // Строим список смежности
+        Map<Integer, List<GraphPanel.Edge>> adj = new HashMap<>();
+        for (GraphPanel.Edge e : edges) {
+            adj.computeIfAbsent(e.v1.label, k -> new ArrayList<>()).add(e);
+            adj.computeIfAbsent(e.v2.label, k -> new ArrayList<>()).add(e);
+        }
 
-    public UnionFind(int n) {
-        parent = new int[n + 1];
-        rank = new int[n + 1];
-        for (int i = 0; i < n + 1; i++) parent[i] = i;
+        // DFS для поиска пути
+        Deque<Integer> stack = new ArrayDeque<>();
+        Map<Integer, GraphPanel.Edge> edgeTo = new HashMap<>();
+        Set<Integer> visited = new HashSet<>();
+
+        stack.push(start);
+        visited.add(start);
+
+        while (!stack.isEmpty()) {
+            int u = stack.pop();
+            if (u == target) break;
+            for (GraphPanel.Edge e : adj.getOrDefault(u, Collections.emptyList())) {
+                int w = (e.v1.label == u ? e.v2.label : e.v1.label);
+                if (!visited.contains(w)) {
+                    visited.add(w);
+                    edgeTo.put(w, e);
+                    stack.push(w);
+                }
+            }
+        }
+
+        // Сбор пути
+        List<GraphPanel.Edge> path = new ArrayList<>();
+        if (!visited.contains(target)) {
+            return path; // пути нет
+        }
+        Integer cur = target;
+        while (cur != null && cur != start) {
+            GraphPanel.Edge e = edgeTo.get(cur);
+            path.add(e);
+            cur = (e.v1.label == cur ? e.v2.label : e.v1.label);
+        }
+        Collections.reverse(path);
+        return path;
     }
 
-    public int find(int x) {
-        if (parent[x] != x) {
-            parent[x] = find(parent[x]);
+    /**
+     * Возвращает ребра цикла: найденный путь + новое ребро.
+     */
+    public static List<GraphPanel.Edge> findCycleEdges(
+            Collection<GraphPanel.Edge> includedEdges,
+            GraphPanel.Edge newEdge
+    ) {
+        List<GraphPanel.Edge> path = findPath(includedEdges,
+                newEdge.v1.label, newEdge.v2.label);
+        if (path.isEmpty()) {
+            return Collections.emptyList();
         }
-        return parent[x];
-    }
-
-    public boolean union(int a, int b) {
-        int rootA = find(a);
-        int rootB = find(b);
-        if (rootA == rootB) return false;
-        if (rank[rootA] < rank[rootB]) {
-            parent[rootA] = rootB;
-        } else if (rank[rootA] > rank[rootB]) {
-            parent[rootB] = rootA;
-        } else {
-            parent[rootB] = rootA;
-            rank[rootA]++;
-        }
-        return true;
+        List<GraphPanel.Edge> cycle = new ArrayList<>(path);
+        cycle.add(newEdge);
+        return cycle;
     }
 }
 
-record State(ArrayList<GraphPanel.Edge> includedEdges, int totalWeight, GraphPanel.Edge currentEdge, boolean isIncluded) {
-    State(ArrayList<GraphPanel.Edge> includedEdges, int totalWeight, GraphPanel.Edge currentEdge, boolean isIncluded) {
-        // Deep copy the list to freeze the state
+// Состояние алгоритма с документированием цикла
+record State( List<GraphPanel.Edge> includedEdges, int totalWeight, GraphPanel.Edge currentEdge, boolean isIncluded, List<GraphPanel.Edge> cycleEdges) {
+    public State(
+            List<GraphPanel.Edge> includedEdges,
+            int totalWeight,
+            GraphPanel.Edge currentEdge,
+            boolean isIncluded,
+            List<GraphPanel.Edge> cycleEdges
+    ) {
         this.includedEdges = new ArrayList<>(includedEdges);
         this.totalWeight = totalWeight;
         this.currentEdge = currentEdge;
         this.isIncluded = isIncluded;
-    }
-
-    @Override
-    public ArrayList<GraphPanel.Edge> includedEdges() {
-        return includedEdges;
+        this.cycleEdges = new ArrayList<>(cycleEdges);
     }
 
     @Override
     public String toString() {
         return String.format(
-                "Current: %s included? %b | Total weight: %d | Included edges: %s",
-                currentEdge, isIncluded, totalWeight, includedEdges);
+                "Current: %s included? %b | Total weight: %d | Included edges: %s | Cycle edges: %s",
+                currentEdge, isIncluded, totalWeight, includedEdges, cycleEdges
+        );
     }
 }
 
+// Реализация Kruskal
 public class Kruskal {
-    private int numVertices;
-    private ArrayList<GraphPanel.Edge> edges;
-    private ArrayList<State> states;
+    private final int numVertices;
+    private final List<GraphPanel.Edge> edges;
+    private final List<State> states;
 
-    public Kruskal(ArrayList<GraphPanel.Edge> input_edges, int numVertices) {
+    public Kruskal(List<GraphPanel.Edge> inputEdges, int numVertices) {
         this.numVertices = numVertices;
-        this.edges = new ArrayList<>();
-        this.states = new ArrayList<>();
-        this.edges.addAll(input_edges);
-    }
-
-    public Kruskal(int numVertices) {
-        this.numVertices = numVertices;
-        this.edges = new ArrayList<>();
+        this.edges = new ArrayList<>(inputEdges);
         this.states = new ArrayList<>();
     }
 
@@ -81,27 +117,31 @@ public class Kruskal {
     }
 
     public ArrayList<GraphPanel.Edge> computeMST() {
-        // Sort edges by weight
         Collections.sort(edges);
-        UnionFind uf = new UnionFind(numVertices);
         ArrayList<GraphPanel.Edge> mst = new ArrayList<>();
         int totalWeight = 0;
 
         for (GraphPanel.Edge edge : edges) {
-            boolean added = false;
-            // If adding this edge doesn't form a cycle
-            if (uf.union(edge.v1.label, edge.v2.label)) {
+            // Проверяем: есть ли путь между концами ребра в текущем MST
+            List<GraphPanel.Edge> path = CycleDetector.findPath(mst, edge.v1.label, edge.v2.label);
+            boolean added = path.isEmpty();
+            List<GraphPanel.Edge> cycle = Collections.emptyList();
+
+            if (added) {
                 mst.add(edge);
                 totalWeight += edge.weight;
-                added = true;
+            } else {
+                // Документируем цикл
+                cycle = CycleDetector.findCycleEdges(mst, edge);
             }
-            // Record the state after considering this edge
-            states.add(new State(mst, totalWeight, edge, added));
+
+            // Сохраняем состояние после обработки ребра
+            states.add(new State(mst, totalWeight, edge, added, cycle));
         }
         return mst;
     }
 
-    public ArrayList<State> getStates() {
+    public List<State> getStates() {
         return states;
     }
 }
