@@ -23,8 +23,8 @@ public class GraphApp extends JFrame {
         JButton loadButton = new JButton("Загрузка");
         JButton resultButton = new JButton("Результат");
 
-        resultButton.addActionListener(e -> runAlgorithm());
-        startButton.addActionListener(e -> runDummyAlgorithm());
+        resultButton.addActionListener(e -> runAlgorithmResult());
+        startButton.addActionListener(e -> runAlgorithm());
         loadButton.addActionListener(e -> showLoadOptions());
 
         topPanel.add(resultButton);
@@ -33,8 +33,8 @@ public class GraphApp extends JFrame {
 
         // Панель управления шагами
         JPanel bottomPanel = new JPanel();
-        stepBackButton = new JButton("<-");
-        stepForwardButton = new JButton("->");
+        stepBackButton = new JButton("<--");
+        stepForwardButton = new JButton("-->");
         stepBackButton.addActionListener(e -> stepBack());
         stepForwardButton.addActionListener(e -> stepForward());
 
@@ -63,13 +63,25 @@ public class GraphApp extends JFrame {
         String[] options = {"Из файла", "Случайная матрица"};
         int choice = JOptionPane.showOptionDialog(this, "Загрузить граф:", "Загрузка",
                 JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, options, options[0]);
+
+        if (choice == 0) {
+            JFileChooser fileChooser = new JFileChooser();
+            if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+                File file = fileChooser.getSelectedFile();
+                graphPanel.loadFromFile(file);
+            }
+        } else if (choice == 1) {
+            graphPanel.generateRandomGraph(5); // генерируем 5 вершин, можно поменять
+        };
+    }
+
+    private void runAlgorithmResult() {
+        graphPanel.runAlgorithmResult();
     }
 
     private void runAlgorithm() {
-        graphPanel.runAlgorithm(); // Заменить на реальный алгоритм
+        graphPanel.runAlgorithm();
     }
-
-    private void runDummyAlgorithm() {}
 
     private void stepBack() {
         graphPanel.step(-1);
