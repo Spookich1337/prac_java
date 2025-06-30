@@ -21,10 +21,13 @@ public class GraphApp extends JFrame {
         JPanel topPanel = new JPanel();
         JButton startButton = new JButton("Старт Алгоритма");
         JButton loadButton = new JButton("Загрузка");
+        JButton resultButton = new JButton("Результат");
 
-        startButton.addActionListener(e -> runAlgorithm());
+        resultButton.addActionListener(e -> runAlgorithm());
+        startButton.addActionListener(e -> runDummyAlgorithm());
         loadButton.addActionListener(e -> showLoadOptions());
 
+        topPanel.add(resultButton);
         topPanel.add(startButton);
         topPanel.add(loadButton);
 
@@ -65,6 +68,8 @@ public class GraphApp extends JFrame {
     private void runAlgorithm() {
         graphPanel.runAlgorithm(); // Заменить на реальный алгоритм
     }
+
+    private void runDummyAlgorithm() {}
 
     private void stepBack() {
         graphPanel.step(-1);
