@@ -2,6 +2,7 @@ package src.logic;
 
 import java.util.*;
 import src.gui.GraphPanel;
+import src.logic.State;
 
 // Класс для поиска пути и детекции цикла
 class CycleDetector {
@@ -75,33 +76,11 @@ class CycleDetector {
     }
 }
 
-// Состояние алгоритма с документированием цикла
-record State( List<GraphPanel.Edge> includedEdges, int totalWeight, GraphPanel.Edge currentEdge, boolean isIncluded, List<GraphPanel.Edge> cycleEdges) {
-    public State(
-            List<GraphPanel.Edge> includedEdges,
-            int totalWeight,
-            GraphPanel.Edge currentEdge,
-            boolean isIncluded,
-            List<GraphPanel.Edge> cycleEdges
-    ) {
-        this.includedEdges = new ArrayList<>(includedEdges);
-        this.totalWeight = totalWeight;
-        this.currentEdge = currentEdge;
-        this.isIncluded = isIncluded;
-        this.cycleEdges = new ArrayList<>(cycleEdges);
-    }
 
-    @Override
-    public String toString() {
-        return String.format(
-                "Current: %s included? %b | Total weight: %d | Included edges: %s | Cycle edges: %s",
-                currentEdge, isIncluded, totalWeight, includedEdges, cycleEdges
-        );
-    }
-}
 
 // Реализация Kruskal
 public class Kruskal {
+
     private final int numVertices;
     private final List<GraphPanel.Edge> edges;
     private final List<State> states;
