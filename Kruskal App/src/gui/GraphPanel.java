@@ -151,26 +151,26 @@ public class GraphPanel extends JPanel {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 
+        for (Edge edge : edges) {
+            g.setColor(Color.BLACK);
+            g.drawLine(edge.v1.x, edge.v1.y, edge.v2.x, edge.v2.y);
+            int midX = (edge.v1.x + edge.v2.x) / 2;
+            int midY = (edge.v1.y + edge.v2.y) / 2;
+            g.drawString(Integer.toString(edge.weight), midX, midY);
+        }
+        
         // Рисуем только рёбра из shownEdges (МОД)
         if (!shownEdges.isEmpty()) {
             for (Edge edge : shownEdges) {
-                g.setColor(Color.BLACK);
+                g.setColor(Color.GREEN);
                 g.drawLine(edge.v1.x, edge.v1.y, edge.v2.x, edge.v2.y);
                 int midX = (edge.v1.x + edge.v2.x) / 2;
                 int midY = (edge.v1.y + edge.v2.y) / 2;
-                g.drawString(Integer.toString(edge.weight), midX, midY);
-            }
-        } else {
-            for (Edge edge : edges) {
                 g.setColor(Color.BLACK);
-                g.drawLine(edge.v1.x, edge.v1.y, edge.v2.x, edge.v2.y);
-                int midX = (edge.v1.x + edge.v2.x) / 2;
-                int midY = (edge.v1.y + edge.v2.y) / 2;
                 g.drawString(Integer.toString(edge.weight), midX, midY);
             }
         }
         
-
         // Рисуем вершины
         for (Vertex v : vertices) {
             g.setColor(Color.WHITE);
@@ -195,7 +195,15 @@ public class GraphPanel extends JPanel {
 
         Kruskal kruskal = new Kruskal(edges, vertices.size());
         kruskal.computeMST();
-        algorithmSteps = kruskal.getStates();
+        
+        algorithmSteps.add(new State(
+            Collections.emptyList(), // includedEdges
+            0,                       // totalWeight
+            null,                    // currentEdge
+            false,                   // isIncluded
+            Collections.emptyList()  // cycleEdges
+        ));
+        algorithmSteps.addAll(kruskal.getStates());
 
         step(1);
     }
@@ -205,8 +213,13 @@ public class GraphPanel extends JPanel {
         if (currentStep < 0) currentStep = 0;
         if (currentStep >= algorithmSteps.size()) currentStep = algorithmSteps.size() - 1;
         if (!algorithmSteps.isEmpty()) {
-            shownEdges = new ArrayList<>(algorithmSteps.get(currentStep).getIncludedEdges());
-            logArea.setText(algorithmSteps.get(currentStep).toString());
+            if (algorithmSteps.get(currentStep).getCurrentEdge() == null) {
+                shownEdges.clear();
+                logArea.setText("Начало алгоритма\n");
+            } else { 
+                shownEdges = new ArrayList<>(algorithmSteps.get(currentStep).getIncludedEdges());
+                logArea.setText(algorithmSteps.get(currentStep).toString());
+            }
             repaint();
         }
     }
