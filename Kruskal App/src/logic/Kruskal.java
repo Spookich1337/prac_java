@@ -98,6 +98,7 @@ public class Kruskal {
     public ArrayList<GraphPanel.Edge> computeMST() {
         Collections.sort(edges);
         ArrayList<GraphPanel.Edge> mst = new ArrayList<>();
+        ArrayList<GraphPanel.Edge> excludedEdges = new ArrayList<>();      
         int totalWeight = 0;
 
         for (GraphPanel.Edge edge : edges) {
@@ -112,10 +113,12 @@ public class Kruskal {
             } else {
                 // Документируем цикл
                 cycle = CycleDetector.findCycleEdges(mst, edge);
+                excludedEdges.add(edge);
+                // Если цикл найден, то ребро не добавляем в MST
             }
 
             // Сохраняем состояние после обработки ребра
-            states.add(new State(mst, totalWeight, edge, added, cycle));
+            states.add(new State(mst,excludedEdges, totalWeight, edge, added, cycle));
         }
         return mst;
     }
