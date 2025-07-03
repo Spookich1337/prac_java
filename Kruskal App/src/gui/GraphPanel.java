@@ -140,6 +140,8 @@ public class GraphPanel extends JPanel {
                     if (clicked != null) {
                         // Удаление вершины
                         if (algorithmRunning && !confirmAlgorithmInterruption()) return;
+                        cycleEdges.clear();
+                        excludedEdges.clear();
                         shownEdges.clear();
                         edges.removeIf(edge -> edge.connects(clicked));
                         vertices.remove(clicked);
@@ -151,6 +153,8 @@ public class GraphPanel extends JPanel {
                         if (edge != null) {
                             // Удаление ребра
                             if (algorithmRunning && !confirmAlgorithmInterruption()) return;
+                            cycleEdges.clear();
+                            excludedEdges.clear();
                             shownEdges.clear();
                             edges.remove(edge);
                             selectedVertex = null;
@@ -194,6 +198,7 @@ public class GraphPanel extends JPanel {
         );
         if (response == JOptionPane.YES_OPTION) {
             algorithmRunning = false;
+            algorithmSteps.clear();
             return true;
         }
         return false;
@@ -340,10 +345,10 @@ public class GraphPanel extends JPanel {
                 g.drawString(Integer.toString(edge.weight), midX, midY);
             }
         }
-
-        if (!excludedEdges.isEmpty()){
-            for (Edge edge : excludedEdges) {
-                g.setColor(Color.RED);
+        
+        if (!cycleEdges.isEmpty()) {
+            for (Edge edge : cycleEdges) {
+                g.setColor(Color.PINK);
                 g.drawLine(edge.v1.x, edge.v1.y, edge.v2.x, edge.v2.y);
                 int midX = (edge.v1.x + edge.v2.x) / 2;
                 int midY = (edge.v1.y + edge.v2.y) / 2;
@@ -351,10 +356,10 @@ public class GraphPanel extends JPanel {
                 g.drawString(Integer.toString(edge.weight), midX, midY);
             }
         }
-
-        if (!cycleEdges.isEmpty()) {
-            for (Edge edge : cycleEdges) {
-                g.setColor(Color.PINK);
+        
+        if (!excludedEdges.isEmpty()){
+            for (Edge edge : excludedEdges) {
+                g.setColor(Color.RED);
                 g.drawLine(edge.v1.x, edge.v1.y, edge.v2.x, edge.v2.y);
                 int midX = (edge.v1.x + edge.v2.x) / 2;
                 int midY = (edge.v1.y + edge.v2.y) / 2;
@@ -414,6 +419,9 @@ public class GraphPanel extends JPanel {
         
         currentStep += delta;
         
+        if (algorithmSteps.size() == 0) {
+            return;
+        }
         if (currentStep < 0) {
             currentStep = 0;
         } else if (currentStep > algorithmSteps.size()) {
@@ -424,7 +432,7 @@ public class GraphPanel extends JPanel {
             return;
         }
         
-        if (currentStep == algorithmSteps.size()) {
+        if (currentStep == algorithmSteps.size() && currentStep > 0) {
             if (!algorithmSteps.isEmpty()) {
                 State lastState = algorithmSteps.get(algorithmSteps.size() - 1);
                 shownEdges = new ArrayList<>(lastState.getIncludedEdges());
