@@ -17,7 +17,6 @@ public class GraphApp extends JFrame {
         setResizable(true);
         setLayout(new BorderLayout());
 
-        // Верхняя панель с кнопками
         JPanel topPanel = new JPanel();
         JButton startButton = new JButton("Старт Алгоритма");
         JButton loadButton = new JButton("Загрузка");
@@ -31,7 +30,6 @@ public class GraphApp extends JFrame {
         topPanel.add(startButton);
         topPanel.add(loadButton);
 
-        // Панель управления шагами
         JPanel bottomPanel = new JPanel();
         stepBackButton = new JButton("<--");
         stepForwardButton = new JButton("-->");
@@ -41,13 +39,11 @@ public class GraphApp extends JFrame {
         bottomPanel.add(stepBackButton);
         bottomPanel.add(stepForwardButton);
 
-        // Правое текстовое поле
         logArea = new JTextArea();
         logArea.setEditable(false);
         JScrollPane logScroll = new JScrollPane(logArea);
         logScroll.setPreferredSize(new Dimension(300, getHeight()));
 
-        // Основной холст графа
         graphPanel = new GraphPanel(logArea);
 
         add(topPanel, BorderLayout.NORTH);
@@ -61,8 +57,16 @@ public class GraphApp extends JFrame {
 
     private void showLoadOptions() {
         String[] options = {"Из файла", "Случайная матрица"};
-        int choice = JOptionPane.showOptionDialog(this, "Загрузить граф:", "Загрузка",
-                JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, options, options[0]);
+        int choice = JOptionPane.showOptionDialog(
+                this,
+                "Загрузить граф:",
+                "Загрузка",
+                JOptionPane.DEFAULT_OPTION,
+                JOptionPane.INFORMATION_MESSAGE,
+                null,
+                options,
+                options[0]
+        );
 
         if (choice == 0) {
             JFileChooser fileChooser = new JFileChooser();
@@ -71,8 +75,54 @@ public class GraphApp extends JFrame {
                 graphPanel.loadFromFile(file);
             }
         } else if (choice == 1) {
-            graphPanel.generateRandomGraph(5); // генерируем 5 вершин, можно поменять
-        };
+            // Собираем панель с двумя полями ввода
+            JPanel inputPanel = new JPanel(new GridLayout(2, 2, 5, 5));
+            inputPanel.add(new JLabel("Количество вершин:"));
+            JTextField vertField = new JTextField();
+            inputPanel.add(vertField);
+            inputPanel.add(new JLabel("Количество рёбер:"));
+            JTextField edgeField = new JTextField();
+            inputPanel.add(edgeField);
+
+            int result = JOptionPane.showConfirmDialog(
+                    this,
+                    inputPanel,
+                    "Параметры генерации",
+                    JOptionPane.OK_CANCEL_OPTION,
+                    JOptionPane.PLAIN_MESSAGE
+            );
+
+            if (result == JOptionPane.OK_OPTION) {
+                try {
+                    int numVert = Integer.parseInt(vertField.getText().trim());
+                    int numEdges = Integer.parseInt(edgeField.getText().trim());
+
+                    if (numVert < 1) {
+                        throw new NumberFormatException("Необходимо numVert ≥ 1");
+                    }
+                    // Максимальное число рёбер в простом неориентированном графе: n*(n-1)/2
+                    int maxEdges = numVert * (numVert - 1) / 2;
+                    if (numEdges < numVert - 1 || numEdges > maxEdges) {
+                        JOptionPane.showMessageDialog(
+                                this,
+                                String.format("Число рёбер должно быть в диапазоне [%d .. %d]", numVert - 1, maxEdges),
+                                "Недопустимое значение",
+                                JOptionPane.WARNING_MESSAGE
+                        );
+                        return;
+                    }
+
+                    graphPanel.generateRandomGraph(numVert, numEdges);
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(
+                            this,
+                            "Пожалуйста, введите корректные целые числа.",
+                            "Ошибка ввода",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+                }
+            }
+        }
     }
 
     private void runAlgorithmResult() {
@@ -85,6 +135,10 @@ public class GraphApp extends JFrame {
 
     private void stepBack() {
         graphPanel.step(-1);
+        // Сброс флага при возврате к началу
+        if (graphPanel.getCurrentStep() == 0) {
+            graphPanel.setAlgorithmRunning(false);
+        }
     }
 
     private void stepForward() {

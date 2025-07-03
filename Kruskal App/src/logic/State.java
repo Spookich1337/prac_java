@@ -3,16 +3,18 @@ package src.logic;
 import java.util.*;
 import src.gui.GraphPanel;
 
-public record State( List<GraphPanel.Edge> includedEdges, int totalWeight, 
+public record State( List<GraphPanel.Edge> includedEdges, List<GraphPanel.Edge> excludedEdges,  int totalWeight, 
     GraphPanel.Edge currentEdge, boolean isIncluded, List<GraphPanel.Edge> cycleEdges) {
     public State(
             List<GraphPanel.Edge> includedEdges,
+            List<GraphPanel.Edge> excludedEdges,
             int totalWeight,
             GraphPanel.Edge currentEdge,
             boolean isIncluded,
             List<GraphPanel.Edge> cycleEdges
     ) {
         this.includedEdges = new ArrayList<>(includedEdges);
+        this.excludedEdges = new ArrayList<>(excludedEdges);
         this.totalWeight = totalWeight;
         this.currentEdge = currentEdge;
         this.isIncluded = isIncluded;
@@ -30,7 +32,7 @@ public record State( List<GraphPanel.Edge> includedEdges, int totalWeight,
         } else {
             for (GraphPanel.Edge edge : includedEdges) {
                 finalString += edge.v1.label + " - " + edge.v2.label + "; ";
-            } // Remove last comma and space
+            } 
             finalString += "\n";
         }
         finalString += "Суммарный вес: " + totalWeight + "\n";
@@ -41,7 +43,7 @@ public record State( List<GraphPanel.Edge> includedEdges, int totalWeight,
             finalString += "Ребра цикла: ";
             for (GraphPanel.Edge edge : cycleEdges) {
                 finalString += edge.v1.label + " - " + edge.v2.label + "; ";
-            }// Remove last comma and space
+            }
         }
 
         return finalString;
@@ -49,6 +51,10 @@ public record State( List<GraphPanel.Edge> includedEdges, int totalWeight,
 
     public List<GraphPanel.Edge> getIncludedEdges() {
         return Collections.unmodifiableList(includedEdges);
+    }
+
+    public List<GraphPanel.Edge> getExcludedEdges() {
+        return Collections.unmodifiableList(excludedEdges);
     }
 
     public int getTotalWeight() {
