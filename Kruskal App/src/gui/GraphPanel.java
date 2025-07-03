@@ -15,6 +15,7 @@ public class GraphPanel extends JPanel {
     private boolean vertexMoved = false;
     private boolean algorithmRunning = false; // Флаг выполнения алгоритма
 
+
     public static class Vertex {
         public int x, y, radius = 10;
         public int label;
@@ -47,7 +48,7 @@ public class GraphPanel extends JPanel {
             return Integer.compare(this.weight, other.weight);
         }
 
-        // Новый метод: проверка нахождения точки на ребре
+        // Метод для нахождения точки на ребре.
         boolean containsPoint(int x, int y, int threshold) {
             // Проверяем расстояние от точки до линии ребра
             int dx = v2.x - v1.x;
@@ -191,7 +192,9 @@ public class GraphPanel extends JPanel {
         });
     }
 
-    // Подтверждение прерывания алгоритма
+    /**Функция, подтверждающая остановку алгоритма.
+     * @return Возвращает true если алгоритм был прерван. Иначе false.
+     */
     private boolean confirmAlgorithmInterruption() {
         Object[] options = {"Да", "Нет"};
         int response = JOptionPane.showOptionDialog(
@@ -212,7 +215,11 @@ public class GraphPanel extends JPanel {
         return false;
     }
 
-    // Новый метод: поиск ребра по координатам
+    /**Поиск ребра по координатам.
+     * @param x координата x на полотне.
+     * @param y координата y
+     * @return Ребро находящееся по этим координатам, если ребра нет, то возвращает null.
+     */
     private Edge getEdgeAt(int x, int y) {
         for (Edge edge : edges) {
             if (edge.containsPoint(x, y, 5)) { // Порог 5 пикселей
@@ -222,40 +229,10 @@ public class GraphPanel extends JPanel {
         return null;
     }
 
-    public void showRandomGraphDialog() {
-        JPanel inputPanel = new JPanel(new GridLayout(2, 2));
-        inputPanel.add(new JLabel("Количество вершин:"));
-        JTextField verticesField = new JTextField("5");
-        inputPanel.add(verticesField);
-        inputPanel.add(new JLabel("Количество рёбер:"));
-        JTextField edgesField = new JTextField("7");
-        inputPanel.add(edgesField);
-
-        int result = JOptionPane.showConfirmDialog(
-                this,
-                inputPanel,
-                "Параметры случайного графа",
-                JOptionPane.OK_CANCEL_OPTION,
-                JOptionPane.PLAIN_MESSAGE
-        );
-
-        if (result == JOptionPane.OK_OPTION) {
-            try {
-                int vertices = Integer.parseInt(verticesField.getText());
-                int edges = Integer.parseInt(edgesField.getText());
-
-                // Проверка минимальных/максимальных значений
-                vertices = Math.max(2, min(vertices, 20)); // от 2 до 20 вершин
-                int maxPossibleEdges = vertices * (vertices - 1) / 2;
-                edges = Math.max(vertices - 1, min(edges, maxPossibleEdges)); // минимум n-1, максимум все возможные
-
-                generateRandomGraph(vertices, edges);
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(this, "Пожалуйста, введите корректные числа", "Ошибка", JOptionPane.ERROR_MESSAGE);
-            }
-        }
-    }
-
+    /**Генерация случайного графа по количеству вершин и ребер.
+     * @param numVert количество вершин генерируемого графа.
+     * @param numEdges количество ребер генерируемого графа.
+     */
     public void generateRandomGraph(int numVert, int numEdges) {
         if (algorithmRunning && !confirmAlgorithmInterruption()) return;
 
@@ -316,7 +293,11 @@ public class GraphPanel extends JPanel {
         repaint();
     }
 
-    // Остальные методы остаются без изменений
+    /**Поиск вершины по координатам.
+     * @param x координата x на полотне.
+     * @param y координата y на полотне.
+     * @return Вершина находящаяся по этим координатам, если вершины нет, то возвращает null.
+     */
     private Vertex getVertexAt(int x, int y) {
         for (Vertex v : vertices) {
             if (v.contains(x, y)) return v;
@@ -324,6 +305,10 @@ public class GraphPanel extends JPanel {
         return null;
     }
 
+
+    /**Находит первый свободный индекс для вершины.
+     * @return Первый свободный индекс, если некоторая вершина была удалена, то ее индекс берется из freeLabels.
+     */
     private int getNextLabel() {
         if (!freeLabels.isEmpty()) {
             return freeLabels.pollFirst();
@@ -385,6 +370,9 @@ public class GraphPanel extends JPanel {
         }
     }
 
+
+    /**Метод для прыжка сразу на последний шаг алгоритма и вывод результата на интерфейс.
+     */
     public void runAlgorithmResult() {
         algorithmRunning = true;
         algorithmSteps.clear();
@@ -401,6 +389,10 @@ public class GraphPanel extends JPanel {
         }
     }
 
+
+    /**Метод для начала прохода по алгоритму,
+     * вызывает алгоритм и запоминает все его шаги для последующей визуализации.
+     */
     public void runAlgorithm() {
         algorithmRunning = true;
         algorithmSteps.clear();
@@ -422,6 +414,10 @@ public class GraphPanel extends JPanel {
         step(1);
     }
 
+
+    /**Метод для перехода между шагами алгоритма. Визуализирует шаги и выводит информацию о шаге в текстовом виде.
+     * @param delta величина шага между состояниями алгоритма. Шаг всегда вперед.
+     */
     public void step(int delta) {
         int previousStep = currentStep;
 
@@ -467,6 +463,10 @@ public class GraphPanel extends JPanel {
         repaint();
     }
 
+
+    /**Загрузка графа из файла, точнее матрицы смежности из файла.
+     * @param file файл из которого будет считана матрица смежности.
+     */
     public void loadFromFile(File file) {
         if (algorithmRunning && !confirmAlgorithmInterruption()) return;
 
@@ -517,12 +517,15 @@ public class GraphPanel extends JPanel {
         }
     }
 
-    // Геттер для текущего шага
+    /**Возвращает номер текущего шага алгоритма.
+     */
     public int getCurrentStep() {
         return currentStep;
     }
 
-    // Сеттер для флага выполнения алгоритма
+    /**Ставит значение флага algorithmRunning на нужное.
+     * @param algorithmRunning состояние которое нужно поставить.
+     */
     public void setAlgorithmRunning(boolean algorithmRunning) {
         this.algorithmRunning = algorithmRunning;
     }
