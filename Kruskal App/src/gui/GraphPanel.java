@@ -105,6 +105,7 @@ public class GraphPanel extends JPanel {
                         int label = getNextLabel();
                         vertices.add(new Vertex(e.getX(), e.getY(), label));
                         selectedVertex = null;
+                        algorithmSteps.clear();
                     } else {
                         if (selectedVertex == null) {
                             selectedVertex = clicked;
@@ -127,6 +128,7 @@ public class GraphPanel extends JPanel {
                                         }
                                     }
                                     selectedVertex = null;
+                                    algorithmSteps.clear();
                                 } else {
                                     selectedVertex = clicked;
                                 }
@@ -151,6 +153,7 @@ public class GraphPanel extends JPanel {
                         vertices.remove(clicked);
                         freeLabels.add(clicked.label);
                         selectedVertex = null;
+                        algorithmSteps.clear();
                     } else {
                         // Проверяем клик на ребре
                         Edge edge = getEdgeAt(e.getX(), e.getY());
@@ -162,6 +165,7 @@ public class GraphPanel extends JPanel {
                             shownEdges.clear();
                             edges.remove(edge);
                             selectedVertex = null;
+                            algorithmSteps.clear();
                         }
                     }
                 }
