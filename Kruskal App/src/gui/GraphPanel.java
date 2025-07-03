@@ -127,6 +127,8 @@ public class GraphPanel extends JPanel {
                                         }
                                     }
                                     selectedVertex = null;
+                                } else {
+                                    selectedVertex = clicked;
                                 }
                             }
                             //selectedVertex = null;
