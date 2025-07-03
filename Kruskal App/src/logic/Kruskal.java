@@ -98,7 +98,7 @@ public class Kruskal {
     public ArrayList<GraphPanel.Edge> computeMST() {
         Collections.sort(edges);
         ArrayList<GraphPanel.Edge> mst = new ArrayList<>();
-        ArrayList<GraphPanel.Edge> excludedEdges = new ArrayList<>();      
+        ArrayList<GraphPanel.Edge> excludedEdges = new ArrayList<>();
         int totalWeight = 0;
 
         for (GraphPanel.Edge edge : edges) {

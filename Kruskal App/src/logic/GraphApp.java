@@ -102,10 +102,10 @@ public class GraphApp extends JFrame {
                     }
                     // Максимальное число рёбер в простом неориентированном графе: n*(n-1)/2
                     int maxEdges = numVert * (numVert - 1) / 2;
-                    if (numEdges < numVert - 1 || numEdges > maxEdges) {
+                    if (numEdges < 0 || numEdges > maxEdges) {
                         JOptionPane.showMessageDialog(
                                 this,
-                                String.format("Число рёбер должно быть в диапазоне [%d .. %d]", numVert - 1, maxEdges),
+                                String.format("Число рёбер должно быть в диапазоне [%d .. %d]", 0, maxEdges),
                                 "Недопустимое значение",
                                 JOptionPane.WARNING_MESSAGE
                         );

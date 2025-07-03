@@ -7,6 +7,7 @@ import java.util.*;
 import javax.swing.*;
 import src.logic.Kruskal;
 import src.logic.State;
+import static java.lang.Math.min;
 
 public class GraphPanel extends JPanel {
     private Vertex draggedVertex = null;
@@ -60,7 +61,7 @@ public class GraphPanel extends JPanel {
 
             // Вычисляем проекцию точки на линию ребра
             double t = ((double)((x - v1.x)*dx + (y - v1.y)*dy)) / lengthSquared;
-            t = Math.max(0, Math.min(1, t)); // Ограничиваем проекцию отрезком
+            t = Math.max(0, min(1, t)); // Ограничиваем проекцию отрезком
 
             // Ближайшая точка на ребре
             int projX = (int)(v1.x + t*dx);
@@ -125,9 +126,10 @@ public class GraphPanel extends JPanel {
                                             JOptionPane.showMessageDialog(null, "Вес должен быть числом");
                                         }
                                     }
+                                    selectedVertex = null;
                                 }
                             }
-                            selectedVertex = null;
+                            //selectedVertex = null;
                         }
 
                         draggedVertex = clicked;
@@ -187,14 +189,14 @@ public class GraphPanel extends JPanel {
     private boolean confirmAlgorithmInterruption() {
         Object[] options = {"Да", "Нет"};
         int response = JOptionPane.showOptionDialog(
-            this,
-            "Алгоритм выполняется. Прервать и продолжить редактирование?",
-            "Подтверждение прерывания",
-            JOptionPane.YES_NO_OPTION,
-            JOptionPane.WARNING_MESSAGE,
-            null,
-            options,  // Массив с текстом кнопок
-            options[0] // Первая кнопка по умолчанию
+                this,
+                "Алгоритм выполняется. Прервать и продолжить редактирование?",
+                "Подтверждение прерывания",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE,
+                null,
+                options,  // Массив с текстом кнопок
+                options[0] // Первая кнопка по умолчанию
         );
         if (response == JOptionPane.YES_OPTION) {
             algorithmRunning = false;
@@ -224,23 +226,23 @@ public class GraphPanel extends JPanel {
         inputPanel.add(edgesField);
 
         int result = JOptionPane.showConfirmDialog(
-            this,
-            inputPanel,
-            "Параметры случайного графа",
-            JOptionPane.OK_CANCEL_OPTION,
-            JOptionPane.PLAIN_MESSAGE
+                this,
+                inputPanel,
+                "Параметры случайного графа",
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE
         );
 
         if (result == JOptionPane.OK_OPTION) {
             try {
                 int vertices = Integer.parseInt(verticesField.getText());
                 int edges = Integer.parseInt(edgesField.getText());
-                
+
                 // Проверка минимальных/максимальных значений
-                vertices = Math.max(2, Math.min(vertices, 20)); // от 2 до 20 вершин
+                vertices = Math.max(2, min(vertices, 20)); // от 2 до 20 вершин
                 int maxPossibleEdges = vertices * (vertices - 1) / 2;
-                edges = Math.max(vertices - 1, Math.min(edges, maxPossibleEdges)); // минимум n-1, максимум все возможные
-                
+                edges = Math.max(vertices - 1, min(edges, maxPossibleEdges)); // минимум n-1, максимум все возможные
+
                 generateRandomGraph(vertices, edges);
             } catch (NumberFormatException ex) {
                 JOptionPane.showMessageDialog(this, "Пожалуйста, введите корректные числа", "Ошибка", JOptionPane.ERROR_MESSAGE);
@@ -250,7 +252,7 @@ public class GraphPanel extends JPanel {
 
     public void generateRandomGraph(int numVert, int numEdges) {
         if (algorithmRunning && !confirmAlgorithmInterruption()) return;
-        
+
         shownEdges.clear();
         freeLabels.clear();
         vertices.clear();
@@ -271,19 +273,19 @@ public class GraphPanel extends JPanel {
 
         // 2. Строим связное остовное дерево
         ArrayList<Integer> order = new ArrayList<>();
-        for (int i = 0; i < numVert; i++) order.add(i);
+        for (int i = 0; i < min(numEdges, numVert); i++) order.add(i);
         Collections.shuffle(order, rand);
 
         Set<String> edgeSet = new HashSet<>();
 
-        for (int i = 1; i < numVert; i++) {
+        for (int i = 1; i < min(numEdges, numVert); i++) {
             int v1 = order.get(i);
             int v2 = order.get(rand.nextInt(i));
             int weight = 1 + rand.nextInt(20);
             Vertex a = vertices.get(v1);
             Vertex b = vertices.get(v2);
             edges.add(new Edge(a, b, weight));
-            edgeSet.add(Math.min(v1, v2) + "-" + Math.max(v1, v2));
+            edgeSet.add(min(v1, v2) + "-" + Math.max(v1, v2));
         }
 
         // 3. Добавляем случайные рёбра до нужного числа
@@ -295,7 +297,7 @@ public class GraphPanel extends JPanel {
                 attempts++;
                 continue;
             }
-            String key = Math.min(i, j) + "-" + Math.max(i, j);
+            String key = min(i, j) + "-" + Math.max(i, j);
             if (edgeSet.contains(key)) {
                 attempts++;
                 continue;
@@ -334,7 +336,7 @@ public class GraphPanel extends JPanel {
             int midY = (edge.v1.y + edge.v2.y) / 2;
             g.drawString(Integer.toString(edge.weight), midX, midY);
         }
-        
+
         if (!shownEdges.isEmpty()) {
             for (Edge edge : shownEdges) {
                 g.setColor(Color.GREEN);
@@ -345,7 +347,7 @@ public class GraphPanel extends JPanel {
                 g.drawString(Integer.toString(edge.weight), midX, midY);
             }
         }
-        
+
         if (!cycleEdges.isEmpty()) {
             for (Edge edge : cycleEdges) {
                 g.setColor(Color.PINK);
@@ -356,10 +358,10 @@ public class GraphPanel extends JPanel {
                 g.drawString(Integer.toString(edge.weight), midX, midY);
             }
         }
-        
+
         if (!excludedEdges.isEmpty()){
             for (Edge edge : excludedEdges) {
-                g.setColor(Color.RED);
+                g.setColor(Color.RED.darker());
                 g.drawLine(edge.v1.x, edge.v1.y, edge.v2.x, edge.v2.y);
                 int midX = (edge.v1.x + edge.v2.x) / 2;
                 int midY = (edge.v1.y + edge.v2.y) / 2;
@@ -367,7 +369,7 @@ public class GraphPanel extends JPanel {
                 g.drawString(Integer.toString(edge.weight), midX, midY);
             }
         }
-        
+
         for (Vertex v : vertices) {
             g.setColor(Color.WHITE);
             g.fillOval(v.x - v.radius, v.y - v.radius, v.radius * 2, v.radius * 2);
@@ -378,36 +380,36 @@ public class GraphPanel extends JPanel {
     }
 
     public void runAlgorithmResult() {
-        algorithmRunning = true; 
+        algorithmRunning = true;
         algorithmSteps.clear();
-        currentStep = -1; 
+        currentStep = -1;
         runAlgorithm();
         step(algorithmSteps.size());
         if (!algorithmSteps.isEmpty()) {
             State lastState = algorithmSteps.get(algorithmSteps.size() - 1);
             shownEdges = new ArrayList<>(lastState.getIncludedEdges());
-            excludedEdges = new ArrayList<>(lastState.getExcludedEdges()); 
+            excludedEdges = new ArrayList<>(lastState.getExcludedEdges());
             cycleEdges.clear();
             logArea.setText("Минимальное остовное дерево построено.\n");
             repaint();
         }
-    }   
+    }
 
     public void runAlgorithm() {
-        algorithmRunning = true; 
+        algorithmRunning = true;
         algorithmSteps.clear();
         currentStep = -1;
 
         Kruskal kruskal = new Kruskal(edges, vertices.size());
         kruskal.computeMST();
-        
+
         algorithmSteps.add(new State(
-            Collections.emptyList(),
-            Collections.emptyList(),
-            0,
-            null,
-            false,
-            Collections.emptyList()
+                Collections.emptyList(),
+                Collections.emptyList(),
+                0,
+                null,
+                false,
+                Collections.emptyList()
         ));
         algorithmSteps.addAll(kruskal.getStates());
 
@@ -416,9 +418,9 @@ public class GraphPanel extends JPanel {
 
     public void step(int delta) {
         int previousStep = currentStep;
-        
+
         currentStep += delta;
-        
+
         if (algorithmSteps.size() == 0) {
             return;
         }
@@ -427,11 +429,11 @@ public class GraphPanel extends JPanel {
         } else if (currentStep > algorithmSteps.size()) {
             currentStep = algorithmSteps.size();
         }
-        
+
         if (currentStep == previousStep) {
             return;
         }
-        
+
         if (currentStep == algorithmSteps.size() && currentStep > 0) {
             if (!algorithmSteps.isEmpty()) {
                 State lastState = algorithmSteps.get(algorithmSteps.size() - 1);
@@ -443,7 +445,7 @@ public class GraphPanel extends JPanel {
             repaint();
             return;
         }
-        
+
         State currentState = algorithmSteps.get(currentStep);
         if (currentState.getCurrentEdge() == null) {
             shownEdges.clear();
@@ -461,7 +463,7 @@ public class GraphPanel extends JPanel {
 
     public void loadFromFile(File file) {
         if (algorithmRunning && !confirmAlgorithmInterruption()) return;
-        
+
         shownEdges.clear();
         excludedEdges.clear();
         cycleEdges.clear();
@@ -482,7 +484,7 @@ public class GraphPanel extends JPanel {
 
             int centerX = getWidth() / 2;
             int centerY = getHeight() / 2;
-            int radius = Math.min(getWidth(), getHeight()) / 3;
+            int radius = min(getWidth(), getHeight()) / 3;
             for (int i = 0; i < n; i++) {
                 double angle = 2 * Math.PI * i / n;
                 int x = centerX + (int)(radius * Math.cos(angle));
