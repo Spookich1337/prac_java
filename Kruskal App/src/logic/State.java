@@ -3,8 +3,8 @@ package src.logic;
 import java.util.*;
 import src.gui.GraphPanel;
 
-public record State( List<GraphPanel.Edge> includedEdges, List<GraphPanel.Edge> excludedEdges,  int totalWeight, 
-    GraphPanel.Edge currentEdge, boolean isIncluded, List<GraphPanel.Edge> cycleEdges) {
+public record State( List<GraphPanel.Edge> includedEdges, List<GraphPanel.Edge> excludedEdges,  int totalWeight,
+                     GraphPanel.Edge currentEdge, boolean isIncluded, List<GraphPanel.Edge> cycleEdges) {
     public State(
             List<GraphPanel.Edge> includedEdges,
             List<GraphPanel.Edge> excludedEdges,
@@ -32,7 +32,7 @@ public record State( List<GraphPanel.Edge> includedEdges, List<GraphPanel.Edge> 
         } else {
             for (GraphPanel.Edge edge : includedEdges) {
                 finalString += edge.v1.label + " - " + edge.v2.label + "; ";
-            } 
+            }
             finalString += "\n";
         }
         finalString += "Суммарный вес: " + totalWeight + "\n";
